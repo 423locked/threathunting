@@ -1,0 +1,943 @@
+---
+title: "Практическая работа №1"
+author: "yaroslavprishedko@yandex.ru"
+format: 
+  md:
+    output-file: README.md
+---
+
+## Цель работы
+
+1.  Развить практические навыки использования языка программирования R для обработки данных
+2.  Развить навыки работы в Rstudio IDE:
+    -   установка пакетов
+    -   работа с проектами в Rstudio Version 2025.09.2+418
+    -   настройка и работа с Git
+3.  Закрепить знания базовых типов данных языка R и простейших операций с ними
+
+## Исходные данные
+
+1.  Программное обеспечение MacOS Version 15.7.1 (24G231)
+2.  RStudio Desktop
+3.  Интерпретатор языка R 4.5.2
+
+## Задание
+
+Используя программный пакет swirl, освоить базовые операции в языке программирования R.
+
+## Ход работы
+
+1.  Установить интерпретатор R
+2.  Установить Rstudio IDE
+3.  Установить программный пакет swirl:
+    -   через интерфейс Rstudio IDE
+    -   или функцией R install.packages("swirl")
+4.  Запустить задание с помощью swirl::swirl()
+5.  Выбрать из меню курсов `1. R Programming: The basics of programming in R`
+6.  Запустить подкурсы и выполнить:
+    -   базовые структурные блоки (Basic Building Blocks)
+    -   рабочие пространства и файлы (Workspace and Files)
+    -   последовательности чисел (Sequences of Numbers)
+    -   векторы (Vectors)
+    -   пропущенные значения (Missing Values)
+7.  Составить отчет и выложить его и исходный qmd/rmd файл в свой репозиторий
+
+## Шаги:
+
+### Шаг 1
+
+#### Установить интерпретатор R и Rstudio Desktop.
+
+``` r
+R version 4.5.2 (2025-10-31) -- "[Not] Part in a Rumble"
+Copyright (C) 2025 The R Foundation for Statistical Computing
+Platform: aarch64-apple-darwin20
+```
+
+#### Установить программный пакет swirl, используя функцию R install.packages("swirl")
+
+``` r
+> install.packages("swirl")
+also installing the dependencies ‘crayon’, ‘sys’, ‘fs’, ‘pkgbuild’, ‘rprojroot’, ‘diffobj’, ‘askpass’, ‘stringi’, ‘brio’, ‘callr’, ‘desc’, ‘evaluate’, ‘jsonlite’, ‘pkgload’, ‘praise’, ‘processx’, ‘ps’, ‘waldo’, ‘curl’, ‘mime’, ‘openssl’, ‘bitops’, ‘stringr’, ‘testthat’, ‘httr’, ‘yaml’, ‘RCurl’, ‘digest’
+trying URL 'https://cran.rstudio.com/bin/macosx/big-sur-arm64/contrib/4.5/crayon_1.5.3.tgz'
+trying URL 'https://cran.rstudio.com/bin/macosx/big-sur-arm64/contrib/4.5/sys_3.4.3.tgz'
+trying URL 'https://cran.rstudio.com/bin/macosx/big-sur-arm64/contrib/4.5/fs_1.6.6.tgz'
+
+> swirl::swirl()
+
+| Welcome to swirl! Please sign in. If you've been here before, use the same name as you did then. If you are new, call yourself
+| something unique.
+
+What shall I call you? Yaroslav_Prishedko
+
+| Please don't use any quotes or other punctuation in your name.
+
+What shall I call you? YaroslavPrishedko
+
+| Thanks, YaroslavPrishedko. Let's cover a couple of quick housekeeping items before we begin our first lesson. First of all, you
+| should know that when you see '...', that means you should press Enter when you are done reading and ready to continue.
+```
+
+#### Запустив задание с помощью swirl::swirl(), выбрать курс R Programming и пройти первые 5 подкурсов:
+
+```         
+1: R Programming: The basics of programming in R
+2: Regression Models: The basics of regression modeling in R
+3: Statistical Inference: The basics of statistical inference in R
+4: Exploratory Data Analysis: The basics of exploring data in R
+5: Don't install anything for me. I'll do it myself.
+
+Selection: 1
+  |=========================================================================================================================| 100%
+
+| Course installed successfully!
+
+
+| Please choose a course, or type 0 to exit swirl.
+
+1: R Programming
+2: Take me to the swirl course repository!
+
+Selection: 1
+
+| Please choose a lesson, or type 0 to return to course menu.
+
+ 1: Basic Building Blocks      2: Workspace and Files        3: Sequences of Numbers       4: Vectors                 
+ 5: Missing Values             6: Subsetting Vectors         7: Matrices and Data Frames   8: Logic                   
+ 9: Functions                 10: lapply and sapply         11: vapply and tapply         12: Looking at Data         
+13: Simulation                14: Dates and Times           15: Base Graphics             
+
+Selection: 1
+```
+
+#### 1. Basic Building Blocks
+
+Изучим базовые операции, переменные, векторны и арифметические операции. Освоение основных операций R:
+
+```         
+| In this lesson, we will explore some basic building blocks of the R programming language.
+
+...
+
+| If at any point you'd like more information on a particular topic related to R, you can type help.start() at the prompt, which will open a menu of resources (either within RStudio or your default web browser, depending on your setup). Alternatively, a simple web search often yields the answer you're looking for.
+
+...
+
+| In its simplest form, R can be used as an interactive calculator. Type 5 + 7 and press Enter.
+
+> 5 + 7
+[1] 12
+
+...
+
+| To assign the result of 5 + 7 to a new variable called x, you type x <- 5 + 7. This can be read as 'x gets 5 plus 7'. Give it a try now.
+
+> x <- 5 + 7
+
+...
+
+| To view the contents of the variable x, just type x and press Enter. Try it now.
+
+> x
+[1] 12
+
+...
+
+| Now, store the result of x - 3 in a new variable called y.
+
+> y <- x - 3
+
+...
+
+| What is the value of y? Type y to find out.
+
+> y
+[1] 9
+```
+
+Работа с векторами:
+
+```         
+...
+
+| Now, let's create a small collection of numbers called a vector. To create a vector containing the numbers 1.1, 9, and 3.14, type c(1.1, 9, 3.14). Try it now and store the result in a variable called z.
+
+> z <- c(1.1, 9, 3.14)
+
+...
+
+| Anytime you have questions about a particular function, you can access R's built-in help files via the `?` command. For example, if you want more information on the c() function, type ?c without the parentheses that normally follow a function name. Give it a try.
+
+> ?c
+
+...
+
+| Type z to view its contents.
+
+> z
+[1] 1.10 9.00 3.14
+
+...
+
+| You can combine vectors to make a new vector. Create a new vector that contains z, 555, then z again in that order.
+
+> c(z, 555, z)
+[1]   1.10   9.00   3.14 555.00   1.10   9.00   3.14
+
+...
+
+| Numeric vectors can be used in arithmetic expressions. Type the following to see what happens: z * 2 + 100.
+
+> z * 2 + 100
+[1] 102.20 118.00 106.28
+```
+
+Векторные операции и переиспользование векторов:
+
+```         
+...
+
+| Take the square root of z - 1 and assign it to a new variable called my_sqrt.
+
+> my_sqrt <- sqrt(z-1)
+
+...
+
+| Before we view the contents of the my_sqrt variable, what do you think it contains?
+
+1: a vector of length 3
+2: a vector of length 0 (i.e. an empty vector)
+3: a single number (i.e a vector of length 1)
+
+Selection: 1
+
+| Print the contents of my_sqrt.
+
+> my_sqrt
+[1] 0.3162278 2.8284271 1.4628739
+
+...
+
+| Now, create a new variable called my_div that gets the value of z divided by my_sqrt.
+
+> my_div <- z / my_sqrt
+
+...
+
+| Which statement do you think is true?
+
+1: The first element of my_div is equal to the first element of z divided by the first element of my_sqrt, and so on...
+2: my_div is undefined
+3: my_div is a single number (i.e a vector of length 1)
+
+Selection: 1
+
+| Go ahead and print the contents of my_div.
+
+> my_div
+[1] 3.478505 3.181981 2.146460
+
+...
+
+| To see another example of how this vector 'recycling' works, try adding c(1, 2, 3, 4) and c(0, 10).
+
+> c(1, 2, 3, 4) + c(0, 10)
+[1]  1 12  3 14
+
+...
+
+| Try c(1, 2, 3, 4) + c(0, 10, 100) for an example.
+
+> c(1, 2, 3, 4) + c(0, 10, 100)
+[1]   1  12 103   4
+Warning message:
+In c(1, 2, 3, 4) + c(0, 10, 100) :
+  longer object length is not a multiple of shorter object length
+
+...
+
+| Earlier in the lesson, you computed z * 2 + 100. Let's pretend that you made a mistake and that you meant to add 1000 instead of 100.
+
+> z * 2 + 1000
+[1] 1002.20 1018.00 1006.28
+
+...
+
+| Finally, let's pretend you'd like to view the contents of a variable that you created earlier, but you can't seem to remember if you named it my_div or myDiv.
+
+> my_div
+[1] 3.478505 3.181981 2.146460
+
+...
+
+| Would you like to receive credit for completing this course on Coursera.org?
+
+1: Yes
+2: No
+
+Selection: 2
+
+| You've reached the end of this lesson! Returning to the main menu...
+```
+
+### 2. Workspace and Files
+
+Навигация по файловой системе:
+
+```         
+| Please choose a course, or type 0 to exit swirl.
+
+1: R Programming
+2: Take me to the swirl course repository!
+
+Selection: 1
+
+| Please choose a lesson, or type 0 to return to course menu.
+
+ 1: Basic Building Blocks      2: Workspace and Files        3: Sequences of Numbers       4: Vectors                 
+ 5: Missing Values             6: Subsetting Vectors         7: Matrices and Data Frames   8: Logic                   
+ 9: Functions                 10: lapply and sapply         11: vapply and tapply         12: Looking at Data         
+13: Simulation                14: Dates and Times           15: Base Graphics             
+
+Selection: 2
+
+| In this lesson, you'll learn how to examine your local workspace in R and begin to explore the relationship between your workspace and the file system of your machine.
+
+...
+
+| Determine which directory your R session is using as its current working directory using getwd().
+
+> getwd()
+[1] "/Users/yadprishedko"
+
+...
+
+| List all the objects in your local workspace using ls().
+
+> ls()
+[1] "my_div"  "my_sqrt" "x"       "y"       "z"      
+
+...
+
+| Assign 9 to x using x <- 9.
+
+> x <- 9
+
+...
+
+| Now take a look at objects that are in your workspace using ls().
+
+> ls()
+[1] "my_div"  "my_sqrt" "x"       "y"       "z"      
+
+...
+
+| List all the files in your working directory using list.files() or dir().
+
+> list.files()
+ [1] "%"                         "Applications"              "bin"                       "Cisco Packet Tracer 9.0.0"
+ [5] "Desktop"                   "dev"                       "Documents"                 "Downloads"                
+ [9] "go"                        "Library"                   "local"                     "Movies"                   
+[13] "Music"                     "Pictures"                  "Public"                   
+
+...
+
+| Check out the help page for list.files with the command ?list.files.
+
+> ?list.files
+
+...
+
+| Use the args() function to determine the arguments to list.files().
+
+> args(list.files)
+function (path = ".", pattern = NULL, all.files = FALSE, full.names = FALSE, 
+    recursive = FALSE, ignore.case = FALSE, include.dirs = FALSE, 
+    no.. = FALSE) 
+NULL
+```
+
+Работа с директориями и файлами:
+
+```         
+
+...
+
+| Assign the value of the current working directory to a variable called "old.dir".
+
+> old.dir <- getwd()
+
+...
+
+| Use dir.create() to create a directory in the current working directory called "testdir".
+
+> dir.create("testdir")
+
+...
+
+| Set your working directory to "testdir" with the setwd() command.
+
+> setwd("testdir")
+
+...
+
+| Create a file in your working directory called "mytest.R" using the file.create() function.
+
+> file.create("mytest.R")
+[1] TRUE
+
+...
+
+| This should be the only file in this newly created directory. Let's check this by listing all the files in the current directory.
+
+> list.files()
+[1] "mytest.R"
+
+...
+
+| Check to see if "mytest.R" exists in the working directory using the file.exists() function.
+
+> file.exists("mytest.R")
+[1] TRUE
+
+...
+
+| Access information about the file "mytest.R" by using file.info().
+
+> file.info("mytest.R")
+         size isdir mode               mtime               ctime               atime uid gid        uname grname
+mytest.R    0 FALSE  644 2025-12-11 22:54:03 2025-12-11 22:54:03 2025-12-11 22:54:03 501  20 yadprishedko  staff
+
+...
+```
+
+Операции с файлами:
+
+```         
+| Change the name of the file "mytest.R" to "mytest2.R" by using file.rename().
+
+> file.rename("mytest.R","mytest2.R")
+[1] TRUE
+
+...
+
+| Make a copy of "mytest2.R" called "mytest3.R" using file.copy().
+
+> file.copy("mytest2.R","mytest3.R")
+[1] TRUE
+
+...
+
+| Provide the relative path to the file "mytest3.R" by using file.path().
+
+> file.path("mytest3.R")
+[1] "mytest3.R"
+
+...
+
+| Pass 'folder1' and 'folder2' as arguments to file.path to make a platform-independent pathname.
+
+> file.path("folder1", "folder2")
+[1] "folder1/folder2"
+
+...
+
+| Take a look at the documentation for dir.create by entering ?dir.create.
+
+> ?dir.create
+
+...
+
+| Create a directory in the current working directory called "testdir2" and a subdirectory for it called "testdir3", all in one command by using dir.create() and file.path().
+
+> dir.create(file.path("testdir2", "testdir3"), recursive = TRUE)
+
+...
+
+| Go back to your original working directory using setwd().
+
+> setwd(old.dir)
+
+...
+
+| Would you like to receive credit for completing this course on Coursera.org?
+
+1: Yes
+2: No
+
+Selection: 2
+
+| You've reached the end of this lesson! Returning to the main menu...
+```
+
+#### 3. Sequences of Numbers
+
+Создание последовательностей с помощью оператора `:`:
+
+```         
+| Please choose a course, or type 0 to exit swirl.
+
+1: R Programming
+2: Take me to the swirl course repository!
+
+Selection: 1
+
+| Please choose a lesson, or type 0 to return to course menu.
+
+ 1: Basic Building Blocks      2: Workspace and Files        3: Sequences of Numbers       4: Vectors                 
+ 5: Missing Values             6: Subsetting Vectors         7: Matrices and Data Frames   8: Logic                   
+ 9: Functions                 10: lapply and sapply         11: vapply and tapply         12: Looking at Data         
+13: Simulation                14: Dates and Times           15: Base Graphics             
+
+Selection: 3
+
+| In this lesson, you'll learn how to create sequences of numbers in R.
+
+...
+
+| The simplest way to create a sequence of numbers in R is by using the `:` operator. Type 1:20 to see how it works.
+
+> 1:20
+ [1]  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16 17 18 19 20
+
+...
+
+| Try pi:10.
+
+> pi:10
+[1] 3.141593 4.141593 5.141593 6.141593 7.141593 8.141593 9.141593
+
+...
+
+| What happens if we do 15:1? Give it a try to find out.
+
+> 15:1
+ [1] 15 14 13 12 11 10  9  8  7  6  5  4  3  2  1
+
+...
+
+| Pull up the documentation for `:` now.
+
+> ?':'
+```
+
+Использование функции `seq()`:
+
+```         
+
+...
+
+| The most basic use of seq() does exactly the same thing as the `:` operator. Try seq(1, 20) to see this.
+
+> seq(1,20)
+ [1]  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16 17 18 19 20
+
+...
+
+| Try seq(0, 10, by=0.5).
+
+> seq(0,10,by=0.5)
+ [1]  0.0  0.5  1.0  1.5  2.0  2.5  3.0  3.5  4.0  4.5  5.0  5.5  6.0  6.5  7.0  7.5  8.0  8.5  9.0  9.5 10.0
+
+...
+```
+
+Создание последовательностей фиксированной длины:
+
+```         
+| seq(5, 10, length=30) does the trick. Give it a shot now and store the result in a new variable called my_seq.
+
+> my_seq <- seq(5, 10, length=30)
+
+...
+
+| To confirm that my_seq has length 30, we can use the length() function.
+
+> length(my_seq)
+[1] 30
+
+...
+
+| Give 1:length(my_seq) a try.
+
+> 1:length(my_seq)
+ [1]  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30
+
+...
+
+| Another option is to use seq(along.with = my_seq).
+
+> seq(along.with = my_seq)
+ [1]  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30
+
+...
+
+| Type seq_along(my_seq) to see it in action.
+
+> seq_along(my_seq)
+ [1]  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30
+
+...
+```
+
+Использование функции `rep()`:
+
+```         
+| If we're interested in creating a vector that contains 40 zeros, we can use rep(0, times = 40).
+
+> rep(0,times=40)
+ [1] 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+
+...
+
+| rep(c(0, 1, 2), times = 10)
+
+> rep(c(0, 1, 2), times = 10)
+ [1] 0 1 2 0 1 2 0 1 2 0 1 2 0 1 2 0 1 2 0 1 2 0 1 2 0 1 2 0 1 2
+
+...
+
+| Try rep(c(0, 1, 2), each = 10).
+
+> rep(c(0, 1, 2), each = 10)
+ [1] 0 0 0 0 0 0 0 0 0 0 1 1 1 1 1 1 1 1 1 1 2 2 2 2 2 2 2 2 2 2
+
+...
+
+| Would you like to receive credit for completing this course on Coursera.org?
+
+1: Yes
+2: No
+
+Selection: 2
+
+| You've reached the end of this lesson! Returning to the main menu...
+```
+
+#### 4. Vectors
+
+Логические векторы и операции сравнения:
+
+```         
+| Please choose a course, or type 0 to exit swirl.
+
+1: R Programming
+2: Take me to the swirl course repository!
+
+Selection: 1
+
+| Please choose a lesson, or type 0 to return to course menu.
+
+ 1: Basic Building Blocks      2: Workspace and Files        3: Sequences of Numbers       4: Vectors                 
+ 5: Missing Values             6: Subsetting Vectors         7: Matrices and Data Frames   8: Logic                   
+ 9: Functions                 10: lapply and sapply         11: vapply and tapply         12: Looking at Data         
+13: Simulation                14: Dates and Times           15: Base Graphics             
+
+Selection: 4
+
+| The simplest and most common data structure in R is the vector.
+
+...
+
+| First, create a numeric vector num_vect that contains the values 0.5, 55, -10, and 6.
+
+> num_vect <- c(0.5, 55, -10, 6)
+
+...
+
+| Now, create a variable called tf that gets the result of num_vect < 1, which is read as 'num_vect is less than 1'.
+
+> tf <- num_vect < 1
+
+...
+
+| What do you think tf will look like?
+
+1: a vector of 4 logical values
+2: a single logical value
+
+Selection: 2
+
+...
+
+Selection: 2
+
+| Print the contents of tf now.
+
+> tf
+[1]  TRUE FALSE  TRUE FALSE
+
+...
+
+| Type num_vect >= 6 without assigning the result to a new variable.
+
+> num_vect >= 6
+[1] FALSE  TRUE FALSE  TRUE
+
+...
+```
+
+Логические операции:
+
+```         
+| (3 > 5) & (4 == 4)
+
+1: TRUE
+2: FALSE
+
+Selection: 2
+
+...
+
+| (TRUE == TRUE) | (TRUE == FALSE)
+
+1: FALSE
+2: TRUE
+
+Selection: 2
+
+...
+
+| ((111 >= 111) | !(TRUE)) & ((4 + 1) == 5)
+
+1: TRUE
+2: FALSE
+
+Selection: 1
+```
+
+Работа с текстовыми векторами:
+
+```         
+| Create a character vector that contains the following words: "My", "name", "is". Store the vector in a variable called my_char.
+
+> my_char <- c("My", "name", "is")
+
+...
+
+| Print the contents of my_char to see what it looks like.
+
+> my_char
+[1] "My"   "name" "is"  
+
+...
+
+| Type paste(my_char, collapse = " ") now.
+
+> paste(my_char, collapse = " ")
+[1] "My name is"
+
+...
+
+| To add (or 'concatenate') your name to the end of my_char, use the c() function like this: c(my_char, "your_name_here").
+
+> my_name <- c(my_char, "Yaroslav")
+
+...
+
+| Take a look at the contents of my_name.
+
+> my_name
+[1] "My"      "name"    "is"      "Yaroslav"
+
+...
+
+| Now, use the paste() function once more to join the words in my_name together into a single character string.
+
+> paste(my_name, collapse = " ")
+[1] "My name is Yaroslav"
+```
+
+Комбинирование векторов:
+
+```         
+| Try paste("Hello", "world!", sep = " ").
+
+> paste("Hello", "world!", sep = " ")
+[1] "Hello world!"
+
+...
+
+| Use paste() to join the integer vector 1:3 with the character vector c("X", "Y", "Z") with sep = "".
+
+> paste(1:3, c("X","Y","Z"), sep = "")
+[1] "1X" "2Y" "3Z"
+
+...
+
+| Try paste(LETTERS, 1:4, sep = "-").
+
+> paste(LETTERS, 1:4, sep = "-")
+ [1] "A-1" "B-2" "C-3" "D-4" "E-1" "F-2" "G-3" "H-4" "I-1" "J-2" "K-3" "L-4" "M-1" "N-2" "O-3" "P-4" "Q-1" "R-2" "S-3" "T-4" "U-1"
+[22] "V-2" "W-3" "X-4" "Y-1" "Z-2"
+
+...
+
+| Would you like to receive credit for completing this course on Coursera.org?
+
+1: Yes
+2: No
+
+Selection: 2
+
+| You've reached the end of this lesson! Returning to the main menu...
+```
+
+#### 5. Missing Values
+
+Работа с пропущенными значениями NA:
+
+```         
+| Please choose a course, or type 0 to exit swirl.
+
+1: R Programming
+2: Take me to the swirl course repository!
+
+Selection: 1
+
+| Please choose a lesson, or type 0 to return to course menu.
+
+ 1: Basic Building Blocks      2: Workspace and Files        3: Sequences of Numbers       4: Vectors                 
+ 5: Missing Values             6: Subsetting Vectors         7: Matrices and Data Frames   8: Logic                   
+ 9: Functions                 10: lapply and sapply         11: vapply and tapply         12: Looking at Data         
+13: Simulation                14: Dates and Times           15: Base Graphics             
+
+Selection: 5
+
+| Missing values play an important role in statistics and data analysis.
+
+...
+
+| In R, NA is used to represent any value that is 'not available' or 'missing'.
+
+...
+
+| To illustrate, let's create a vector c(44, NA, 5, NA) and assign it to a variable x.
+
+> x <- c(44, NA, 5, NA)
+
+...
+
+| Now, let's multiply x by 3.
+
+> x * 3
+[1] 132  NA  15  NA
+```
+
+Генерация данных с пропусками:
+
+```         
+| Lets create a vector containing 1000 draws from a standard normal distribution with y <- rnorm(1000).
+
+> y <- rnorm(1000)
+
+...
+
+| Next, let's create a vector containing 1000 NAs with z <- rep(NA, 1000).
+
+> z <- rep(NA, 1000)
+
+...
+
+| Finally, let's select 100 elements at random from these 2000 values -- my_data <- sample(c(y, z), 100).
+
+> my_data <- sample(c(y, z),100)
+```
+
+Обнаружение пропущенных значений:
+
+```         
+| Call is.na() on my_data and assign the result to my_na.
+
+> my_na <- is.na(my_data)
+
+...
+
+| Now, print my_na to see what you came up with.
+
+> my_na
+  [1] FALSE FALSE  TRUE  TRUE FALSE  TRUE FALSE  TRUE FALSE FALSE  TRUE FALSE  TRUE  TRUE FALSE  TRUE  TRUE FALSE  TRUE  TRUE FALSE
+ [22]  TRUE FALSE  TRUE FALSE  TRUE  TRUE FALSE  TRUE  TRUE FALSE  TRUE  TRUE FALSE  TRUE FALSE FALSE  TRUE FALSE  TRUE FALSE  TRUE
+ [43] FALSE  TRUE  TRUE  TRUE  TRUE  TRUE FALSE FALSE FALSE  TRUE FALSE FALSE  TRUE FALSE  TRUE  TRUE  TRUE  TRUE FALSE  TRUE  TRUE
+ [64]  TRUE FALSE FALSE FALSE  TRUE  TRUE  TRUE  TRUE  TRUE FALSE  TRUE FALSE FALSE  TRUE FALSE FALSE  TRUE FALSE  TRUE  TRUE FALSE
+ [85]  TRUE FALSE FALSE FALSE FALSE FALSE  TRUE FALSE  TRUE FALSE FALSE  TRUE  TRUE FALSE FALSE FALSE
+
+...
+
+
+| Give my_data == NA a try.
+
+> my_data == NA
+  [1] NA NA NA NA NA NA NA NA NA NA NA NA NA NA NA NA NA NA NA NA NA NA NA NA NA NA NA NA NA NA NA NA NA NA NA NA NA NA NA NA NA NA
+ [43] NA NA NA NA NA NA NA NA NA NA NA NA NA NA NA NA NA NA NA NA NA NA NA NA NA NA NA NA NA NA NA NA NA NA NA NA NA NA NA NA NA NA
+ [85] NA NA NA NA NA NA NA NA NA NA NA NA NA NA NA NA
+
+...
+```
+
+Подсчет пропущенных значений:
+
+```         
+
+| Call the sum() function on my_na to count the total number of TRUEs in my_na.
+
+> sum(my_na)
+[1] 52
+
+...
+
+| Print my_data to the console.
+
+> my_data
+  [1]  1.2252113803 -1.2577566399            NA            NA  2.0573448596            NA -0.4062854043            NA  0.4106507714
+ [10]  0.8104985190            NA  0.9424732999            NA            NA -0.5644675485            NA            NA  0.0005621953
+ [19]            NA            NA  0.1478213685            NA -1.8849324573            NA -0.8986569785            NA            NA
+ [28]  1.1542367944            NA            NA  0.9191912315            NA            NA  0.9474827840            NA -0.0721675539
+ [37] -0.1273062710            NA  0.6279019148            NA -1.6743878993            NA -0.6276175918            NA            NA
+ [46]            NA            NA            NA -0.6844421034 -0.1652163703 -2.1725551791            NA  0.6364163494 -0.1870614362
+ [55]            NA  1.4906717009            NA            NA            NA            NA -0.4068604629            NA            NA
+ [64]            NA -1.4092762010 -1.1541317885 -0.0122193921            NA            NA            NA            NA            NA
+ [73]  0.0862836998            NA -0.3559663684 -0.0350820550            NA -1.3657484548 -1.5579302654            NA  0.4383658494
+ [82]            NA            NA -0.1979821377            NA -1.0329938354  0.2403846424  0.1499514081  1.7816347939  0.7145364856
+ [91]            NA  1.1209547101            NA -0.8247354802 -0.0958942099            NA            NA  0.0801399742  1.6841127795
+[100]  1.1947910470
+```
+
+Специальные значения NaN и Inf:
+
+```         
+...
+
+| To generate NaN, try dividing 0 by 0 now.
+
+> 0/0
+[1] NaN
+
+...
+
+| What happens if you subtract Inf from Inf?
+
+> Inf - Inf
+[1] NaN
+
+...
+
+| Would you like to receive credit for completing this course on Coursera.org?
+
+1: No
+2: Yes
+
+Selection: 2
+What is your email address? mail@ydprishedko.ru
+What is your assignment token? 
+
+| Leaving swirl now. Type swirl() to resume.
+```
+
+## Оценка результата
+
+В ходе лабораторной работы были успешно освоены базовые навыки программирования на языке R через интерактивную систему обучения swirl.
+
+## Вывод
+
+В результате выполнения лабораторной работы были получены практические навыки работы с языком программирования R в среде RStudio.

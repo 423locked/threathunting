@@ -1,0 +1,485 @@
+# Практическая работа №4. Исследование метаданных DNS трафика
+yaroslavprishedko@yandex.ru
+
+## Цель работы
+
+1.  Развить практические навыки использования языка программирования R
+    для обработки данных
+2.  Закрепить знания базовых типов данных языка R
+3.  Развить практические навыки использования функций обработки данных
+    пакета `dplyr`
+
+## Исходные данные
+
+1.  Программное обеспечение MacOS Version 15.7.1 (24G231)
+2.  RStudio Desktop
+3.  Интерпретатор языка R 4.5.2
+4.  Пакеты `tidyverse`, `dplyr`, `httr`, `jsonlite`
+
+## Задание
+
+Используя программный пакет dplyr, освоить анализ DNS логов с помощью
+языка программирования R.
+
+## Ход работы
+
+1.  Импортируйте данные DNS –
+    https://storage.yandexcloud.net/dataset.ctfsec/dns.zip. Данные были
+    собраны с помощью сетевого анализатора zeek
+2.  Добавьте пропущенные данные о структуре данных (назначении столбцов)
+3.  Преобразуйте данные в столбцах в нужный формат,просмотрите общую
+    структуру данных с помощью функции glimpse()
+4.  Сколько участников информационного обмена всети Доброй Организации?
+5.  Какое соотношение участников обмена внутрисети и участников
+    обращений к внешним ресурсам?
+6.  Найдите топ-10 участников сети, проявляющих наибольшую сетевую
+    активность.
+7.  Найдите топ-10 доменов, к которым обращаются пользователи сети и
+    соответственное количество обращений
+8.  Определите базовые статистические характеристики (функция summary()
+    ) интервала времени между последовательными обращениями к топ-10
+    доменам.
+9.  Часто вредоносное программное обеспечение использует DNS канал в
+    качестве канала управления, периодически отправляя запросы на
+    подконтрольный злоумышленникам DNS сервер. По периодическим запросам
+    на один и тот же домен можно выявить скрытый DNS канал. Есть ли
+    такие IP адреса в исследуемом датасете?
+10. Определите местоположение (страну, город) и организацию-провайдера
+    для топ-10 доменов. Для этого можно использовать сторонние
+    сервисы,например http://ip-api.com (API-эндпоинт –
+    http://ip-api.com/json).
+
+## Шаги:
+
+### 1. Установка и загрузка необходимых пакетов
+
+    > install.packages("tidyverse")
+    also installing the dependencies ‘fastmap’, ‘bit’, ‘sass’, ‘cachem’, ‘rappdirs’, ‘rematch’, ‘base64enc’, ‘bit64’, ‘prettyunits’, ‘highr’, ‘xfun’, ‘bslib’, ‘fontawesome’, ‘htmltools’, ‘jquerylib’, ‘tinytex’, ‘backports’, ‘memoise’, ‘blob’, ‘DBI’, ‘data.table’, ‘gargle’, ‘uuid’, ‘cellranger’, ‘ids’, ‘rematch2’, ‘cpp11’, ‘timechange’, ‘systemfonts’, ‘textshaping’, ‘clipr’, ‘vroom’, ‘tzdb’, ‘progress’, ‘knitr’, ‘rmarkdown’, ‘selectr’, ‘broom’, ‘conflicted’, ‘dbplyr’, ‘dtplyr’, ‘forcats’, ‘googledrive’, ‘googlesheets4’, ‘haven’, ‘hms’, ‘lubridate’, ‘modelr’, ‘purrr’, ‘ragg’, ‘readr’, ‘readxl’, ‘reprex’, ‘rstudioapi’, ‘rvest’, ‘tidyr’, ‘xml2’
+    trying URL 'https://cran.rstudio.com/bin/macosx/big-sur-arm64/contrib/4.5/fastmap_1.2.0.tgz'
+    trying URL 'https://cran.rstudio.com/bin/macosx/big-sur-arm64/contrib/4.5/bit_4.6.0.tgz'
+    ...
+    The downloaded binary packages are in
+        /var/folders/dq/3s4jxhqs721_fwv6mbjvr9zc0000gn/T//RtmpoKz8jp/downloaded_packages
+    > install.packages("readr")
+    trying URL 'https://cran.rstudio.com/bin/macosx/big-sur-arm64/contrib/4.5/readr_2.1.6.tgz'
+    Content type 'application/x-gzip' length 1948582 bytes (1.9 MB)
+    ==================================================
+    downloaded 1.9 MB
+
+
+    The downloaded binary packages are in
+        /var/folders/dq/3s4jxhqs721_fwv6mbjvr9zc0000gn/T//RtmpoKz8jp/downloaded_packages
+    > install.packages("dplyr")
+    trying URL 'https://cran.rstudio.com/bin/macosx/big-sur-arm64/contrib/4.5/dplyr_1.1.4.tgz'
+    Content type 'application/x-gzip' length 1614595 bytes (1.5 MB)
+    ==================================================
+    downloaded 1.5 MB
+
+
+    The downloaded binary packages are in
+        /var/folders/dq/3s4jxhqs721_fwv6mbjvr9zc0000gn/T//RtmpoKz8jp/downloaded_packages
+    > install.packages("stringr")
+    trying URL 'https://cran.rstudio.com/bin/macosx/big-sur-arm64/contrib/4.5/stringr_1.6.0.tgz'
+    Content type 'application/x-gzip' length 333106 bytes (325 KB)
+    ==================================================
+    downloaded 325 KB
+
+
+    The downloaded binary packages are in
+        /var/folders/dq/3s4jxhqs721_fwv6mbjvr9zc0000gn/T//RtmpoKz8jp/downloaded_packages
+    > install.packages("httr")
+    trying URL 'https://cran.rstudio.com/bin/macosx/big-sur-arm64/contrib/4.5/httr_1.4.7.tgz'
+    Content type 'application/x-gzip' length 491112 bytes (479 KB)
+    ==================================================
+    downloaded 479 KB
+
+
+    The downloaded binary packages are in
+        /var/folders/dq/3s4jxhqs721_fwv6mbjvr9zc0000gn/T//RtmpoKz8jp/downloaded_packages
+    > install.packages("jsonlite")
+    trying URL 'https://cran.rstudio.com/bin/macosx/big-sur-arm64/contrib/4.5/jsonlite_2.0.0.tgz'
+    Content type 'application/x-gzip' length 1109878 bytes (1.1 MB)
+    ==================================================
+    downloaded 1.1 MB
+
+    > library(dplyr)
+    > library(httr)
+    > library(jsonlite)
+    > library(tidyverse)
+
+### 2. Добавьте пропущенные данные о структуре данных (назначении столбцов)
+
+DNS логи были загружены из облачного хранилища и обработаны с учетом
+структуры данных, собранных сетевым анализатором zeek:
+
+    > dir.create("files", showWarnings = FALSE, recursive = TRUE)
+    > 
+    > file_url <- "https://storage.yandexcloud.net/dataset.ctfsec/dns.zip"
+    > zip_filename <- "files/dns.zip"
+    > 
+    > if (requireNamespace("curl", quietly = TRUE)) {
+    +     curl::curl_download(file_url, zip_filename, quiet = FALSE)
+    + } else {
+    +     download.file(file_url, zip_filename, mode = "wb", quiet = FALSE)
+    + }
+     [100%] Downloaded 6407934 bytes...
+
+    > unzip(zip_filename,  exdir = "files")
+    > 
+
+### 3. Преобразуйте данные в столбцах в нужный формат
+
+    > dns_log <- read.table("files/dns.log",
+    +                       sep = "\t",
+    +                       header = FALSE,
+    +                       stringsAsFactors = FALSE,
+    +                       strip.white = TRUE,
+    +                       na.strings = c("", "NA", "-"),
+    +                       colClasses = "character")
+
+    > dns_log
+                      V1                 V2                        V3    V4              V5   V6  V7    V8
+    1  1331901005.510000 CWGtK431H9XuaTN4fi           192.168.202.100 45658  192.168.27.203  137 udp 33008
+    2  1331901015.070000  C36a282Jljz7BsbGH            192.168.202.76   137 192.168.202.255  137 udp 57402
+    3  1331901015.820000  C36a282Jljz7BsbGH            192.168.202.76   137 192.168.202.255  137 udp 57402
+    4  1331901016.570000  C36a282Jljz7BsbGH            192.168.202.76   137 192.168.202.255  137 udp 57402
+    5  1331901005.860000  C36a282Jljz7BsbGH            192.168.202.76   137 192.168.202.255  137 udp 57398
+    6  1331901006.610000  C36a282Jljz7BsbGH            192.168.202.76   137 192.168.202.255  137 udp 57398
+
+### 4. Просмотрите общую структуру данных с помощью функции `glimpse`
+
+    > dns_results <- read.delim("files/dns.log", 
+    +                           sep = "\t",
+    +                           col.names = column_names,
+    +                           stringsAsFactors = FALSE,
+    +                           na.strings = c("", "NA", "-", "(empty)"))
+    > 
+    > dns_results$timestamp <- as.POSIXct(as.numeric(dns_results$timestamp), origin = "1970-01-01")
+    > dns_results[c("AA","TC","RD","RA","rejected")] <- 
+    +     dns_results[c("AA","TC","RD","RA","rejected")] == "T"
+    > 
+    > dns_results
+                 timestamp                uid                 source_ip source_port  destination_ip destination_port protocol transaction_id
+    1  2012-03-16 16:30:15  C36a282Jljz7BsbGH            192.168.202.76         137 192.168.202.255              137      udp          57402
+    2  2012-03-16 16:30:15  C36a282Jljz7BsbGH            192.168.202.76         137 192.168.202.255              137      udp          57402
+    3  2012-03-16 16:30:16  C36a282Jljz7BsbGH            192.168.202.76         137 192.168.202.255              137      udp          57402
+    4  2012-03-16 16:30:05  C36a282Jljz7BsbGH            192.168.202.76         137 192.168.202.255              137      udp          57398
+    ...
+    > glimpse(dns_log)
+    Rows: 427,935
+    Columns: 23
+    $ timestamp        <chr> "1331901005.510000", "1331901015.070000", "1331901015.820000", "1331901016.570000", "1331901005.860000", "1331901006.610000", …
+    $ uid              <chr> "CWGtK431H9XuaTN4fi", "C36a282Jljz7BsbGH", "C36a282Jljz7BsbGH", "C36a282Jljz7BsbGH", "C36a282Jljz7BsbGH", "C36a282Jljz7BsbGH",…
+    $ source_ip        <chr> "192.168.202.100", "192.168.202.76", "192.168.202.76", "192.168.202.76", "192.168.202.76", "192.168.202.76", "192.168.202.76",…
+    $ source_port      <chr> "45658", "137", "137", "137", "137", "137", "137", "137", "137", "137", "137", "137", "137", "45658", "45659", "45658", "137",…
+
+### 5. Сколько участников информационного обмена в сети Доброй Организации?
+
+    > unique_ips <- distinct(select(pivot_longer(dns_log, 
+    +                                            cols = c(source_ip, destination_ip), 
+    +                                            values_to = "ip"), 
+    +                               ip))
+    > filtered_ips <- filter(unique_ips, !is.na(ip))
+    > ip_count_result <- rename(count(filtered_ips), ip_count = n)
+    > ip_count_result
+    # A tibble: 1 × 1
+      ip_count
+         <int>
+    1     1359
+
+### 6. Какое соотношение участников обмена внутри сети и участников обращений к внешним ресурсам?
+
+Определим коэффициент уникальности внутрих IP-адресов:
+
+    > IPv4_regex <- "(^10\\.)|(^172\\.1[6-9]\\.)|(^172\\.2[0-9]\\.)|(^172\\.3[0-1]\\.)|(^192\\.168\\.)"
+    > 
+    > with(
+    +     dns_log, 
+    +     sum(!duplicated(c(
+    +         source_ip[grepl(IPv4_regex, source_ip, perl = TRUE)],
+    +         destination_ip[grepl(IPv4_regex, destination_ip, perl = TRUE)]
+    +     ))) / sum(!duplicated(c(
+    +         source_ip[!grepl(IPv4_regex, source_ip, perl = TRUE)],
+    +         destination_ip[!grepl(IPv4_regex, destination_ip, perl = TRUE)]
+    +     )))
+    + )
+    [1] 13.77174
+
+### 7. Найдите топ-10 участников сети, проявляющих наибольшую сетевую активность
+
+Расчитаем самые популярные IP-адреса в сети
+
+    > long_format_data <- pivot_longer(dns_log, cols = c(source_ip, destination_ip), values_to = "ip")
+    > ip_counts <- count(long_format_data, ip, name = "activity_count")
+    > sorted_counts <- arrange(ip_counts, desc(activity_count))
+    > top_10_ips <- slice_head(sorted_counts, n = 10)
+    > top_10_ips
+    # A tibble: 10 × 2
+       ip              activity_count
+       <chr>                    <int>
+     1 192.168.207.4           266627
+     2 10.10.117.210            75943
+     3 192.168.202.255          68720
+     4 192.168.202.93           26522
+     5 172.19.1.100             25481
+     6 192.168.202.103          18121
+     7 192.168.202.76           16978
+     8 192.168.202.97           16176
+     9 192.168.202.141          14976
+    10 192.168.202.110          14493
+
+### 8. Найдите топ-10 доменов, к которым обращаются пользователи сети и соответственное количество обращений
+
+    > domain_counts <- count(dns_log, query, name = "request_count")
+    > sorted_domains <- arrange(domain_counts, desc(request_count))
+    > top_10_domains <- slice_head(sorted_domains, n = 10)
+    > top_10_domains_list <- top_10_domains
+    > top_10_domains_list
+    # A tibble: 10 × 2
+       query                                                                     request_count
+       <chr>                                                                             <int>
+     1 "teredo.ipv6.microsoft.com"                                                       39273
+     2 "tools.google.com"                                                                14057
+     3 "www.apple.com"                                                                   13390
+     4 "time.apple.com"                                                                  13109
+     5 "safebrowsing.clients.google.com"                                                 11658
+     6 "*\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00"         10401
+     7 "WPAD"                                                                             9134
+     8 "44.206.168.192.in-addr.arpa"                                                      7248
+     9 "HPE8AA67"                                                                         6929
+    10 "ISATAP"                                                                           6569
+
+### 9. Опеределите базовые статистические характеристики (функция `summary()`) интервала времени между последовательными обращениями к топ-10 доменам.
+
+    > domain_filter <- dns_log$query %in% top_10_domains_list$query
+    > filtered_logs <- dns_log[domain_filter, ]
+    > 
+    > convert_timestamp <- function(ts_vector) {
+    +     if(inherits(ts_vector, "POSIXt")) {
+    +         return(ts_vector)
+    +     }
+    +     
+    +     formats_to_try <- c(
+    +         "%Y-%m-%d %H:%M:%S",
+    +         "%Y/%m/%d %H:%M:%S",
+    +         "%d-%m-%Y %H:%M:%S",
+    +         "%d/%m/%Y %H:%M:%S",
+    +         "%Y-%m-%d %H:%M:%OS",
+    +         "%Y-%m-%d %H:%M",
+    +         "%d/%m/%Y %H:%M",
+    +         "%Y-%m-%dT%H:%M:%S",
+    +         "%Y-%m-%dT%H:%M:%SZ"
+    +     )
+    +     
+    +     if(is.numeric(ts_vector) || suppressWarnings(!any(is.na(as.numeric(ts_vector))))) {
+    +         return(as.POSIXct(as.numeric(ts_vector), origin = "1970-01-01"))
+    +     }
+    +     
+    +     for(fmt in formats_to_try) {
+    +         result <- tryCatch({
+    +             as.POSIXct(as.character(ts_vector), format = fmt)
+    +         }, error = function(e) NULL)
+    +         
+    +         if(!is.null(result) && !all(is.na(result))) {
+    +             return(result)
+    +         }
+    +     }
+    +     
+    +     return(as.POSIXct(as.character(ts_vector)))
+    + }
+    > 
+    > filtered_logs$timestamp <- convert_timestamp(filtered_logs$timestamp)
+    > 
+    > filtered_logs <- filtered_logs[!is.na(filtered_logs$timestamp), ]
+    > 
+    > top_domains_log <- filtered_logs[order(filtered_logs$query, filtered_logs$timestamp), ]
+    > 
+    > domain_groups <- split(top_domains_log, top_domains_log$query)
+    > 
+    > time_diff_results <- data.frame()
+    > 
+    > for(domain_name in names(domain_groups)) {
+    +     domain_data <- domain_groups[[domain_name]]
+    +     
+    +     domain_data <- domain_data[order(domain_data$timestamp), ]
+    +     
+    +     if(nrow(domain_data) > 1) {
+    +         time_diffs <- as.numeric(diff(domain_data$timestamp))
+    +         
+    +         temp_df <- data.frame(
+    +             query = rep(domain_name, length(time_diffs)),
+    +             time_diff = time_diffs
+    +         )
+    +         
+    +         time_diff_results <- rbind(time_diff_results, temp_df)
+    +     }
+    + }
+    > 
+    > if(nrow(time_diff_results) > 0 && !all(is.na(time_diff_results$time_diff))) {
+    +     summary_statistics <- summary(time_diff_results$time_diff)
+    +     print(summary_statistics)
+    +     
+    +     cat("\nОбщее количество рассчитанных интервалов:", nrow(time_diff_results), "\n")
+    +     cat("Уникальных доменов:", length(unique(time_diff_results$query)), "\n")
+    + } else {
+    +     print("Недостаточно данных для расчета временных интервалов или все значения NA")
+    + }
+         Min.   1st Qu.    Median      Mean   3rd Qu.      Max. 
+        0.000     0.000     0.750     8.758     1.740 52723.500 
+
+    Общее количество рассчитанных интервалов: 131758 
+    Уникальных доменов: 10 
+
+### 10. Часто вредоносное программное обеспечение использует DNS канал в качестве канала управления, периодически отправляя запросы на подконтрольный злоумышленникам DNS сервер.
+
+По периодическим запросам на один и тот же домен можно выявить скрытый
+DNS канал. Есть ли такие IP адреса в исследуемом датасете?
+
+    > clean_dns_data <- dns_log[
+    +     !is.na(dns_log$source_ip) & !is.na(dns_log$query) &
+    +         dns_log$source_ip != "-" & dns_log$query != "-", 
+    + ]
+    > 
+    > grouped_analysis <- clean_dns_data
+    > grouped_analysis <- grouped_analysis[order(grouped_analysis$source_ip, grouped_analysis$query, grouped_analysis$timestamp), ]
+    > 
+    > time_calculations <- split(grouped_analysis, list(grouped_analysis$source_ip, grouped_analysis$query))
+    > 
+    > interval_results <- data.frame()
+    > for(group_key in names(time_calculations)) {
+    +     group_data <- time_calculations[[group_key]]
+    +     if(nrow(group_data) > 1) {
+    +         time_diffs <- as.numeric(diff(group_data$timestamp))
+    +         time_diffs <- c(NA, time_diffs)
+    +         
+    +         group_data$time_diff <- time_diffs
+    +         interval_results <- rbind(interval_results, group_data)
+    +     } else {
+    +         group_data$time_diff <- NA
+    +         interval_results <- rbind(interval_results, group_data)
+    +     }
+    + }
+    >   src_ip          query           request_count mean_diff sd_diff
+    >   <chr>           <chr>                   <int>     <dbl>   <dbl>
+    > 1 192.168.202.103 lifehacker.com             68   0.00612  0.0171
+    > 2 10.10.117.210   www.h                      64   0        0     
+    > 3 10.10.117.210   httphq.hec.net            102   0        0
+    > 4 192.168.202.103 www.hkparts.net            36   0.00371  0.0124
+    > 5 10.10.117.210   hq.h                      377   0        0     
+
+### 11. Определите местоположение (страну, город) и организацию-провайдера для топ-10 доменов.
+
+Для этого можно использовать сторонние сервисы, например
+`http://ip-api.com` (API-эндпоинт `http://ip-api.com/json`)\*\*
+
+    > retrieve_geolocation_data <- function(domain_list, batch_size = 5) {
+    +     extract_domain_metadata <- function(target_domain) {
+    +         if(identical(target_domain, NA) || is.null(target_domain) || 
+    +            target_domain %in% c("", "-", " ", NULL)) {
+    +             return(NULL)
+    +         }
+    +         
+    +         geolocation_api_url <- sprintf("http://ip-api.com/json/%s", target_domain)
+    +         
+    +         attempt_result <- tryCatch({
+    +             response_object <- GET(geolocation_api_url)
+    +             
+    +             if(status_code(response_object) == 200L) {
+    +                 response_content <- content(response_object, "text")
+    +                 json_data <- fromJSON(response_content)
+    +                 
+    +                 data.frame(
+    +                     domain_name = target_domain,
+    +                     country_name = ifelse(!is.null(json_data$country) && !is.na(json_data$country), 
+    +                                           json_data$country, NA_character_),
+    +                     country_code = ifelse(!is.null(json_data$countryCode) && !is.na(json_data$countryCode), 
+    +                                           json_data$countryCode, NA_character_),
+    +                     region_code = ifelse(!is.null(json_data$region) && !is.na(json_data$region), 
+    +                                          json_data$region, NA_character_),
+    +                     region_full_name = ifelse(!is.null(json_data$regionName) && !is.na(json_data$regionName), 
+    +                                               json_data$regionName, NA_character_),
+    +                     city_name = ifelse(!is.null(json_data$city) && !is.na(json_data$city), 
+    +                                        json_data$city, NA_character_),
+    +                     postal_code = ifelse(!is.null(json_data$zip) && !is.na(json_data$zip), 
+    +                                          json_data$zip, NA_character_),
+    +                     latitude_coord = ifelse(!is.null(json_data$lat) && !is.na(json_data$lat), 
+    +                                             json_data$lat, NA_real_),
+    +                     longitude_coord = ifelse(!is.null(json_data$lon) && !is.na(json_data$lon), 
+    +                                              json_data$lon, NA_real_),
+    +                     time_zone = ifelse(!is.null(json_data$timezone) && !is.na(json_data$timezone), 
+    +                                        json_data$timezone, NA_character_),
+    +                     internet_provider = ifelse(!is.null(json_data$isp) && !is.na(json_data$isp), 
+    +                                                json_data$isp, NA_character_),
+    +                     organization_name = ifelse(!is.null(json_data$org) && !is.na(json_data$org), 
+    +                                                json_data$org, NA_character_),
+    +                     asn_info = ifelse(!is.null(json_data$as) && !is.na(json_data$as), 
+    +                                       json_data$as, NA_character_),
+    +                     original_query = ifelse(!is.null(json_data$query) && !is.na(json_data$query), 
+    +                                             json_data$query, NA_character_),
+    +                     stringsAsFactors = FALSE
+    +                 )
+    +             } else {
+    +                 message(sprintf("API returned status code %d for domain: %s", 
+    +                                 status_code(response_object), target_domain))
+    +                 NULL
+    +             }
+    +         }, error = function(exception) {
+    +             message(sprintf("Exception occurred for domain %s: %s", 
+    +                             target_domain, exception$message))
+    +             NULL
+    +         })
+    +         
+    +         return(attempt_result)
+    +     }
+    +     
+    +     processed_results <- list()
+    +     total_domains <- length(domain_list)
+    +     
+    +     for(index in seq_along(domain_list)) {
+    +         current_domain <- domain_list[index]
+    +         message(sprintf("Processing %d/%d: %s", index, total_domains, current_domain))
+    +         
+    +         domain_result <- extract_domain_metadata(current_domain)
+    +         if(!is.null(domain_result)) {
+    +             processed_results <- append(processed_results, list(domain_result))
+    +         }
+    +         
+    +         Sys.sleep(1)
+    +     }
+    +     
+    +     if(length(processed_results) > 0) {
+    +         final_dataset <- do.call(rbind, processed_results)
+    +         return(final_dataset)
+    +     } else {
+    +         return(data.frame())
+    +     }
+    + }
+    > 
+    > geolocation_results <- retrieve_geolocation_data(top_10_domains_list$query)
+     A tibble: 10 × 15
+       domain                                country countryCode region regionName city  zip     lat    lon timezone isp   org   as    query stringsAsFactors
+       <chr>                                 <chr>   <chr>       <chr>  <chr>      <chr> <chr> <dbl>  <dbl> <chr>    <chr> <chr> <chr> <chr> <lgl>           
+     1 "teredo.ipv6.microsoft.com"           NA      NA          NA     NA         NA     NA    NA     NA   NA       NA    NA    NA    "ter… FALSE           
+     2 "tools.google.com"                    United… US          CA     California Moun… "940…  37.4 -122.  America… Goog… Goog… AS15… "142… FALSE           
+     3 "www.apple.com"                       United… US          WA     Washington Seat… "981…  47.6 -122.  America… Akam… Akam… AS20… "260… FALSE           
+     4 "time.apple.com"                      United… US          VA     Virginia   Ashb… ""     39.0  -77.5 America… Appl… Appl… AS61… "262… FALSE           
+     5 "safebrowsing.clients.google.com"     United… US          DC     Washingto… Wash… ""     38.9  -77.0 America… Goog… Goog… AS15… "260… FALSE           
+     6 "*\\x00\\x00\\x00\\x00\\x00\\x00\\x0… NA      NA          NA     NA         NA     NA    NA     NA   NA       NA    NA    NA    "*\\… FALSE           
+     7 "WPAD"                                NA      NA          NA     NA         NA     NA    NA     NA   NA       NA    NA    NA    "WPA… FALSE           
+     8 "44.206.168.192.in-addr.arpa"         NA      NA          NA     NA         NA     NA    NA     NA   NA       NA    NA    NA    "44.… FALSE           
+     9 "HPE8AA67"                            NA      NA          NA     NA         NA     NA    NA     NA   NA       NA    NA    NA    "HPE… FALSE           
+    10 "ISATAP"                              NA      NA          NA     NA         NA     NA    NA     NA   NA       NA    NA    NA    "ISA… FALSE           
+
+## Оценка результатов
+
+В рамках практической работы удалось происследовать подозрительную
+активность в сети Доброй Организации. Получилось установить потерянные
+метаданные.
+
+## Вывод
+
+В результате выполнения “Практической работы №4” были закреплены навыки
+использования языка `R` и пакета `dplyr` для анализа реальных наборов
+данных о воздушных перевозках, основные функции предназначенный для
+обработки данных в tidyverse, а также навыки расследования метаданных
+DNS трафика
