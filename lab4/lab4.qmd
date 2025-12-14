@@ -40,7 +40,7 @@ format:
 
 ### 1. Установка и загрузка необходимых пакетов
 
-```         
+```{r}
 > install.packages("tidyverse")
 also installing the dependencies ‘fastmap’, ‘bit’, ‘sass’, ‘cachem’, ‘rappdirs’, ‘rematch’, ‘base64enc’, ‘bit64’, ‘prettyunits’, ‘highr’, ‘xfun’, ‘bslib’, ‘fontawesome’, ‘htmltools’, ‘jquerylib’, ‘tinytex’, ‘backports’, ‘memoise’, ‘blob’, ‘DBI’, ‘data.table’, ‘gargle’, ‘uuid’, ‘cellranger’, ‘ids’, ‘rematch2’, ‘cpp11’, ‘timechange’, ‘systemfonts’, ‘textshaping’, ‘clipr’, ‘vroom’, ‘tzdb’, ‘progress’, ‘knitr’, ‘rmarkdown’, ‘selectr’, ‘broom’, ‘conflicted’, ‘dbplyr’, ‘dtplyr’, ‘forcats’, ‘googledrive’, ‘googlesheets4’, ‘haven’, ‘hms’, ‘lubridate’, ‘modelr’, ‘purrr’, ‘ragg’, ‘readr’, ‘readxl’, ‘reprex’, ‘rstudioapi’, ‘rvest’, ‘tidyr’, ‘xml2’
 trying URL 'https://cran.rstudio.com/bin/macosx/big-sur-arm64/contrib/4.5/fastmap_1.2.0.tgz'
@@ -100,7 +100,7 @@ downloaded 1.1 MB
 
 DNS логи были загружены из облачного хранилища и обработаны с учетом структуры данных, собранных сетевым анализатором zeek:
 
-```         
+```{r}
 > dir.create("files", showWarnings = FALSE, recursive = TRUE)
 > 
 > file_url <- "https://storage.yandexcloud.net/dataset.ctfsec/dns.zip"
@@ -119,7 +119,7 @@ DNS логи были загружены из облачного хранили�
 
 ### 3. Преобразуйте данные в столбцах в нужный формат
 
-```         
+```{r}
 > dns_log <- read.table("files/dns.log",
 +                       sep = "\t",
 +                       header = FALSE,
@@ -140,7 +140,7 @@ DNS логи были загружены из облачного хранили�
 
 ### 4. Просмотрите общую структуру данных с помощью функции `glimpse`
 
-```         
+```{r}
 > dns_results <- read.delim("files/dns.log", 
 +                           sep = "\t",
 +                           col.names = column_names,
@@ -169,7 +169,7 @@ $ source_port      <chr> "45658", "137", "137", "137", "137", "137", "137", "137
 
 ### 5. Сколько участников информационного обмена в сети Доброй Организации?
 
-```         
+```{r}
 > unique_ips <- distinct(select(pivot_longer(dns_log, 
 +                                            cols = c(source_ip, destination_ip), 
 +                                            values_to = "ip"), 
@@ -187,7 +187,7 @@ $ source_port      <chr> "45658", "137", "137", "137", "137", "137", "137", "137
 
 Определим коэффициент уникальности внутрих IP-адресов:
 
-```         
+```{r}
 > IPv4_regex <- "(^10\\.)|(^172\\.1[6-9]\\.)|(^172\\.2[0-9]\\.)|(^172\\.3[0-1]\\.)|(^192\\.168\\.)"
 > 
 > with(
@@ -207,7 +207,7 @@ $ source_port      <chr> "45658", "137", "137", "137", "137", "137", "137", "137
 
 Расчитаем самые популярные IP-адреса в сети
 
-```         
+```{r}
 > long_format_data <- pivot_longer(dns_log, cols = c(source_ip, destination_ip), values_to = "ip")
 > ip_counts <- count(long_format_data, ip, name = "activity_count")
 > sorted_counts <- arrange(ip_counts, desc(activity_count))
@@ -230,7 +230,7 @@ $ source_port      <chr> "45658", "137", "137", "137", "137", "137", "137", "137
 
 ### 8. Найдите топ-10 доменов, к которым обращаются пользователи сети и соответственное количество обращений
 
-```         
+```{r}
 > domain_counts <- count(dns_log, query, name = "request_count")
 > sorted_domains <- arrange(domain_counts, desc(request_count))
 > top_10_domains <- slice_head(sorted_domains, n = 10)
@@ -253,7 +253,7 @@ $ source_port      <chr> "45658", "137", "137", "137", "137", "137", "137", "137
 
 ### 9. Опеределите базовые статистические характеристики (функция `summary()`) интервала времени между последовательными обращениями к топ-10 доменам.
 
-```         
+```{r}
 > domain_filter <- dns_log$query %in% top_10_domains_list$query
 > filtered_logs <- dns_log[domain_filter, ]
 > 
@@ -338,7 +338,7 @@ $ source_port      <chr> "45658", "137", "137", "137", "137", "137", "137", "137
 
 По периодическим запросам на один и тот же домен можно выявить скрытый DNS канал. Есть ли такие IP адреса в исследуемом датасете?
 
-```         
+```{r} 
 > clean_dns_data <- dns_log[
 +     !is.na(dns_log$source_ip) & !is.na(dns_log$query) &
 +         dns_log$source_ip != "-" & dns_log$query != "-", 
@@ -376,7 +376,7 @@ $ source_port      <chr> "45658", "137", "137", "137", "137", "137", "137", "137
 
 Для этого можно использовать сторонние сервисы, например `http://ip-api.com` (API-эндпоинт `http://ip-api.com/json`)\*\*
 
-```         
+```{r}
 > retrieve_geolocation_data <- function(domain_list, batch_size = 5) {
 +     extract_domain_metadata <- function(target_domain) {
 +         if(identical(target_domain, NA) || is.null(target_domain) || 

@@ -46,7 +46,7 @@ format:
 
 #### 1. Установка и загрузка необходимых пакетов
 
-```         
+```{r}
 > install.packages('nycflights13')
 trying URL 'https://cran.rstudio.com/bin/macosx/big-sur-arm64/contrib/4.5/nycflights13_1.0.2.tgz'
 Content type 'application/x-gzip' length 4504016 bytes (4.3 MB)
@@ -63,7 +63,7 @@ The downloaded binary packages are in
 
 #### Вопрос 1: Сколько встроенных в пакет nycflights13 датафреймов?
 
-```         
+```{r}
 > package_data <- data(package = "nycflights13")
 > dataframes <- package_data$results[, "Item"]
 > length(dataframes)
@@ -73,7 +73,7 @@ The downloaded binary packages are in
 
 #### Вопрос 2: Сколько строк в каждом датафрейме?
 
-```         
+```{r}
 > nrow(airlines)
 [1] 16
 > 
@@ -98,7 +98,7 @@ The downloaded binary packages are in
 
 #### Вопрос 3: Сколько столбцов в каждом датафрейме?
 
-```         
+```{r}
 > ncol(airlines)
 [1] 2
 > 
@@ -123,7 +123,7 @@ The downloaded binary packages are in
 
 #### Вопрос 4: Как просмотреть примерный вид датафрейма?
 
-```         
+```{r}
 > head(airlines)
 # A tibble: 6 × 2
   carrier name                    
@@ -139,21 +139,21 @@ The downloaded binary packages are in
 
 #### Вопрос 5: Сколько компаний-перевозчиков (carrier) учитывают эти наборы данных?
 
-```         
+```{r}
 > length(unique(airlines$carrier))
 [1] 16
 ```
 
 #### Вопрос 6: Сколько рейсов принял аэропорт John F Kennedy Intl в мае?
 
-```         
+```{r}
 > nrow(flights[flights$dest == "JFK" & flights$month == 5, ])
 [1] 0
 ```
 
 #### Вопрос 7: Какой самый северный аэропорт?
 
-```         
+```{r}
 > top_airport <- airports[which.max(airports$lat), ]
 > selected_data <- top_airport[c("name", "lat")]
 > selected_data
@@ -167,7 +167,7 @@ The downloaded binary packages are in
 
 #### Вопрос 8: Какой аэропорт самый высокогорный (находится выше всех над уровнем моря)?
 
-```         
+```{r}
 > top_airport <- airports[which.max(airports$alt), ]
 > selected_data <- top_airport[c("name", "alt")]
 > 
@@ -181,7 +181,7 @@ The downloaded binary packages are in
 
 #### Вопрос 9: Какие бортовые номера у самых старых самолетов?
 
-```         
+```{r}
 > planes_no_na <- planes[!is.na(planes$year), ]
 > 
 > sorted_planes <- planes_no_na[order(planes_no_na$year), ]
@@ -207,7 +207,7 @@ The downloaded binary packages are in
 
 #### Вопрос 10: Какая средняя температура воздуха была в сентябре в аэропорту John F Kennedy Intl (в градусах Цельсия)?
 
-```         
+```{r}
 > jfk_september <- weather[weather$origin == "JFK" & weather$month == 9, ]
 > 
 > mean_temp_f <- mean(jfk_september$temp, na.rm = TRUE)
@@ -218,7 +218,7 @@ The downloaded binary packages are in
 
 #### Вопрос 11: Самолеты какой авиакомпании совершили больше всего вылетов в июне?
 
-```         
+```{r}
 > june_flights <- flights[flights$month == 6, ]
 > carrier_counts <- table(june_flights$carrier)
 > sorted_carriers <- sort(carrier_counts, decreasing = TRUE)
@@ -232,7 +232,7 @@ UA United Air Lines Inc. 4975
 
 #### Вопрос 12: Самолеты какой авиакомпании задерживались чаще других в 2013 году?
 
-```         
+```{r}
 > complete_flights <- flights[!is.na(flights$dep_delay) & !is.na(flights$arr_delay), ]
 > complete_flights$delayed <- complete_flights$dep_delay > 0 | complete_flights$arr_delay > 0
 > carrier_stats <- aggregate(

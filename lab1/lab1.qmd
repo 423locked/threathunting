@@ -48,7 +48,7 @@ format:
 
 #### Установить интерпретатор R и Rstudio Desktop.
 
-``` r
+```{r}
 R version 4.5.2 (2025-10-31) -- "[Not] Part in a Rumble"
 Copyright (C) 2025 The R Foundation for Statistical Computing
 Platform: aarch64-apple-darwin20
@@ -56,7 +56,7 @@ Platform: aarch64-apple-darwin20
 
 #### Установить программный пакет swirl, используя функцию R install.packages("swirl")
 
-``` r
+```{r}
 > install.packages("swirl")
 also installing the dependencies ‘crayon’, ‘sys’, ‘fs’, ‘pkgbuild’, ‘rprojroot’, ‘diffobj’, ‘askpass’, ‘stringi’, ‘brio’, ‘callr’, ‘desc’, ‘evaluate’, ‘jsonlite’, ‘pkgload’, ‘praise’, ‘processx’, ‘ps’, ‘waldo’, ‘curl’, ‘mime’, ‘openssl’, ‘bitops’, ‘stringr’, ‘testthat’, ‘httr’, ‘yaml’, ‘RCurl’, ‘digest’
 trying URL 'https://cran.rstudio.com/bin/macosx/big-sur-arm64/contrib/4.5/crayon_1.5.3.tgz'
@@ -80,7 +80,7 @@ What shall I call you? YaroslavPrishedko
 
 #### Запустив задание с помощью swirl::swirl(), выбрать курс R Programming и пройти первые 5 подкурсов:
 
-```         
+```{r}  
 1: R Programming: The basics of programming in R
 2: Regression Models: The basics of regression modeling in R
 3: Statistical Inference: The basics of statistical inference in R
@@ -114,7 +114,7 @@ Selection: 1
 
 Изучим базовые операции, переменные, векторны и арифметические операции. Освоение основных операций R:
 
-```         
+```{r}
 | In this lesson, we will explore some basic building blocks of the R programming language.
 
 ...
@@ -284,7 +284,7 @@ Selection: 2
 
 Навигация по файловой системе:
 
-```         
+```{r}
 | Please choose a course, or type 0 to exit swirl.
 
 1: R Programming
@@ -474,7 +474,7 @@ Selection: 2
 
 Создание последовательностей с помощью оператора `:`:
 
-```         
+```{r}
 | Please choose a course, or type 0 to exit swirl.
 
 1: R Programming
@@ -523,7 +523,7 @@ Selection: 3
 
 Использование функции `seq()`:
 
-```         
+```{r}
 
 ...
 
@@ -544,7 +544,7 @@ Selection: 3
 
 Создание последовательностей фиксированной длины:
 
-```         
+```{r}
 | seq(5, 10, length=30) does the trick. Give it a shot now and store the result in a new variable called my_seq.
 
 > my_seq <- seq(5, 10, length=30)
@@ -582,7 +582,7 @@ Selection: 3
 
 Использование функции `rep()`:
 
-```         
+```{r}
 | If we're interested in creating a vector that contains 40 zeros, we can use rep(0, times = 40).
 
 > rep(0,times=40)
@@ -618,7 +618,7 @@ Selection: 2
 
 Логические векторы и операции сравнения:
 
-```         
+```{r}
 | Please choose a course, or type 0 to exit swirl.
 
 1: R Programming
@@ -708,7 +708,7 @@ Selection: 1
 
 Работа с текстовыми векторами:
 
-```         
+```{r}
 | Create a character vector that contains the following words: "My", "name", "is". Store the vector in a variable called my_char.
 
 > my_char <- c("My", "name", "is")
@@ -787,7 +787,7 @@ Selection: 2
 
 Работа с пропущенными значениями NA:
 
-```         
+```{r}
 | Please choose a course, or type 0 to exit swirl.
 
 1: R Programming
@@ -877,7 +877,7 @@ Selection: 5
 
 Подсчет пропущенных значений:
 
-```         
+```{r}
 
 | Call the sum() function on my_na to count the total number of TRUEs in my_na.
 
@@ -905,7 +905,7 @@ Selection: 5
 
 Специальные значения NaN и Inf:
 
-```         
+```{r}
 ...
 
 | To generate NaN, try dividing 0 by 0 now.
