@@ -1,0 +1,418 @@
+---
+title: "Практическая работа №5. Исследование информации о состоянии беспроводных сетей"
+author: "yaroslavprishedko@yandex.ru"
+format: 
+  md:
+    output-file: README.md
+---
+
+## Цель работы
+
+1. Получить знания о методах исследования радиоэлектронной обстановки.
+2. Составить представление о механизмах работы Wi-Fi сетей на канальном и сетевом уровне модели OSI.
+3. Закрепить практические навыки использования языка программирования R для обработки данных
+4. Закрепить знания основных функций обработки данных экосистемы `tidyverse` языка R
+
+## Исходные данные
+
+1.  Программное обеспечение MacOS Version 15.7.1 (24G231)
+2.  RStudio Desktop
+3.  Интерпретатор языка R 4.5.2
+
+## Общая ситуация
+
+Вы исследуете состояние радиоэлектронной обстановки с помощью журналов программных средств анализа беспроводных сетей – `tcpdump` и `airodump-ng`. Для этого с помощью сниффера (микрокомпьютера Raspberry Pi и специализированного Wi-Fi адаптера, переведенного в режим мониторинга) собирались данные. Сниффер беспроводного трафика был установлен стационарно (не перемещался). Какой анализ можно провести с помощью собранной информации
+
+## Задание
+
+Используя программный пакет `dplyr` языка программирования R провести анализ журналов и ответить на вопросы
+
+## Подготовка к выполнению задания 
+
+Произведем загрузку библиотек:
+
+```{r}
+library(tidyverse)
+library(readr)
+library(httr)
+library(dplyr)
+```
+
+## Шаги
+
+### Подготовка данных
+
+#### 1. Импортируйте данные
+
+Для начала скачаем данные:
+
+```{r}
+if (!dir.exists("data")) {
+    dir.create("data")
+}
+
+source_url <- "https://storage.yandexcloud.net/dataset.ctfsec/P2_wifi_data.csv"
+local_file <- "P2_wifi_data.csv"
+
+download.file(
+    url = source_url,
+    destfile = local_file,
+    mode = "wb",
+    quiet = FALSE
+)
+```
+
+Прочитаем данные двух датасетов из CSV-файла: 
+
+```{r}
+file_lines <- read_lines(local_file)
+table_boundary <- which(grepl("Station MAC", file_lines))
+
+access_points_data <- read_csv(
+    local_file, 
+    n_max = table_boundary[1] - 4
+)
+
+head(access_points_data)
+
+stations_data <- read_csv(
+    local_file, 
+    skip = table_boundary[1] - 2
+)
+
+head(stations_data)
+```
+
+#### 2. Привести датасеты в вид "аккуратных данных", преобразовать типы столбцов всоответствии с типом данных
+
+Преобразуем данные
+
+```{r}
+# Функция для нормализации имен колонок
+normalize_column_names <- function(df) {
+    names(df) <- names(df) %>%
+        gsub("[.# ]", "_", .) %>%
+        gsub("_+", "_", .) %>%
+        tolower() %>%
+        gsub("^_+", "", .) %>%
+        gsub("-", "_", .)
+    return(df)
+}
+
+# Обработка данных точек доступа
+normalized_ap_data <- normalize_column_names(access_points_data)
+
+ap_data_final <- normalized_ap_data %>%
+    mutate(
+        channel = as.integer(channel),
+        speed = as.integer(speed),
+        power = as.integer(power),
+        beacons = as.integer(beacons),
+        iv = as.integer(iv),
+        id_length = as.integer(id_length),
+        privacy = as.factor(privacy),
+        cipher = as.factor(cipher),
+        authentication = as.factor(authentication)
+    )
+
+# Обработка данных клиентов
+normalized_stations_data <- normalize_column_names(stations_data)
+
+stations_data_final <- normalized_stations_data %>%
+    mutate(
+        power = as.integer(power),
+        packets = as.integer(packets)
+    )
+```
+
+#### 3. Просмотрите общую структуру данных с помощью функции `glimpse`
+
+```{r}
+glimpse(ap_data_final)
+glimpse(stations_data_final)
+```
+
+### Анализ точек доступа
+
+#### 1. Определить небезопасные точки доступа (без шифрования – OPN)
+
+```{r}
+unsafe_networks <- ap_data_final[ap_data_final$privacy == "OPN", ]
+unsafe_networks
+```
+
+#### 2. Определить производителя для каждого обнаруженного устройства
+
+Для этого воспользуемся запросами в API, а также настроим кэш, для уменьшения количества сетевых запросов
+
+```{r}
+vendor_cache <- new.env(hash = TRUE)
+
+identify_vendor <- function(mac) {
+    clean_mac <- gsub("[:.-]", "", mac)
+    clean_mac <- toupper(clean_mac)
+    
+    oui_prefix <- substr(clean_mac, 1, 6)
+    
+    if (exists(oui_prefix, envir = vendor_cache)) {
+        return(get(oui_prefix, envir = vendor_cache))
+    }
+    
+    api_endpoint <- paste0("https://www.macvendorlookup.com/api/v2/", oui_prefix)
+    response <- GET(api_endpoint, timeout(3))
+    
+    if (status_code(response) == 200) {
+        parsed_data <- content(response, "parsed")
+        
+        if (length(parsed_data) > 0 && !is.null(parsed_data[[1]]$company)) {
+            company_name <- parsed_data[[1]]$company
+            if (company_name == "") {
+                company_name <- "Неизвестный производитель"
+            }
+        } else {
+            company_name <- "Неизвестный производитель"
+        }
+        
+        assign(oui_prefix, company_name, envir = vendor_cache)
+        return(company_name)
+    } else {
+        assign(oui_prefix, "Неизвестный производитель", envir = vendor_cache)
+        return("Неизвестный производитель")
+    }
+}
+
+ap_data_enhanced <- ap_data_final
+ap_data_enhanced$manufacturer <- sapply(ap_data_enhanced$bssid, identify_vendor)
+
+ap_data_enhanced[, c("bssid", "manufacturer")]
+```
+
+#### 3. Выявить устройства, использующие последнюю версию протокола шифрования WPA3, и названия точек доступа, реализованных на этих устройствах
+
+```{r}
+wpa3_networks <- ap_data_enhanced[grep("WPA3", ap_data_enhanced$privacy), ]
+wpa3_networks_sorted <- wpa3_networks[order(-wpa3_networks$power), ]
+wpa3_networks_sorted
+```
+
+#### 4. Отсортировать точки доступа по интервалу времени, в течение которого они находились на связи, по убыванию (Не забудьте склеить сессии! Сессии считаются независимыми если интервал времени между ними превышает 45 минут.)
+
+Для этого реализуем функцию склейки:
+
+```{r}
+merge_access_point_sessions <- function(data, gap_threshold = 45) {
+    data$first_time_seen <- as.POSIXct(data$first_time_seen)
+    data$last_time_seen <- as.POSIXct(data$last_time_seen)
+    
+    data <- data[order(data$bssid, data$first_time_seen), ]
+    
+    process_single_bssid <- function(bssid_group) {
+        if (nrow(bssid_group) <= 1) {
+            bssid_group$session_id <- 1
+            bssid_group$session_duration_minutes <- as.numeric(
+                difftime(bssid_group$last_time_seen, bssid_group$first_time_seen, units = "mins")
+            )
+            return(bssid_group)
+        }
+        
+        bssid_group <- bssid_group[order(bssid_group$first_time_seen), ]
+        
+        bssid_group$prev_end_time <- c(NA, bssid_group$last_time_seen[-nrow(bssid_group)])
+        bssid_group$time_gap <- as.numeric(
+            difftime(bssid_group$first_time_seen, bssid_group$prev_end_time, units = "mins")
+        )
+        
+        bssid_group$new_session <- c(TRUE, bssid_group$time_gap[-1] > gap_threshold)
+        bssid_group$session_id <- cumsum(bssid_group$new_session)
+        
+        merged_sessions <- aggregate(
+            cbind(
+                first_time_seen = first_time_seen,
+                last_time_seen = last_time_seen,
+                beacons = beacons,
+                iv = iv
+            ) ~ session_id + essid + channel + privacy + manufacturer,
+            data = bssid_group,
+            FUN = function(x) if (is.POSIXct(x[1])) min(x) else if (is.POSIXct(x[2])) max(x) else sum(x, na.rm = TRUE)
+        )
+        
+        merged_sessions$session_duration_minutes <- as.numeric(
+            difftime(merged_sessions$last_time_seen, merged_sessions$first_time_seen, units = "mins")
+        )
+        
+        merged_sessions$session_duration_hours <- round(merged_sessions$session_duration_minutes / 60, 2)
+        merged_sessions$session_duration_days <- round(merged_sessions$session_duration_minutes / (60 * 24), 2)
+        
+        return(merged_sessions)
+    }
+    
+    result_list <- by(data, data$bssid, process_single_bssid)
+    combined_result <- do.call(rbind, result_list)
+    rownames(combined_result) <- NULL
+    
+    combined_result <- combined_result[order(-combined_result$session_duration_minutes), ]
+    
+    return(combined_result)
+}
+
+session_results <- merge_access_point_sessions(ap_data_enhanced)
+session_results
+```
+
+#### 5. Обнаружить топ-10 самых быстрых точек доступа
+
+```{r}
+fast_networks <- ap_data_enhanced[!is.na(ap_data_enhanced$speed) & ap_data_enhanced$speed > 0, ]
+
+top_speed_networks <- fast_networks[order(-fast_networks$speed), ][1:10, ]
+top_speed_networks
+```
+
+#### 6. Отсортировать точки доступа по частоте отправки запросов (beacons) в единицу времени по их убыванию
+
+```{r}
+valid_beacon_data <- ap_data_enhanced[
+    !is.na(ap_data_enhanced$beacons) & ap_data_enhanced$beacons > 0 & 
+    !is.na(ap_data_enhanced$first_time_seen) & !is.na(ap_data_enhanced$last_time_seen), ]
+
+valid_beacon_data$first_time_seen <- as.POSIXct(valid_beacon_data$first_time_seen)
+valid_beacon_data$last_time_seen <- as.POSIXct(valid_beacon_data$last_time_seen)
+
+valid_beacon_data$observation_duration <- as.numeric(
+    difftime(valid_beacon_data$last_time_seen, valid_beacon_data$first_time_seen, units = "mins")
+)
+
+valid_beacon_data$observation_duration <- ifelse(
+    valid_beacon_data$observation_duration <= 0, 0.1, valid_beacon_data$observation_duration
+)
+
+valid_beacon_data$beacons_per_minute <- valid_beacon_data$beacons / valid_beacon_data$observation_duration
+valid_beacon_data$beacons_per_second <- valid_beacon_data$beacons_per_minute / 60
+valid_beacon_data$beacons_per_hour <- valid_beacon_data$beacons / (valid_beacon_data$observation_duration / 60)
+
+beacon_frequency_ranking <- valid_beacon_data[order(-valid_beacon_data$beacons_per_minute), ]
+beacon_frequency_ranking
+```
+
+### Анализ клиентов
+
+#### 1. Определить производителя для каждого обнаруженного устройства
+
+Для этого воспользуемся функцией, написанной нами для поиска производителей точек доступа:
+
+```{r}
+valid_stations <- stations_data_final[
+    !is.na(stations_data_final$bssid) & stations_data_final$bssid != "(not associated)", ]
+
+valid_stations$manufacturer <- sapply(valid_stations$bssid, identify_vendor)
+
+valid_stations[, c("bssid", "manufacturer")]
+```
+
+#### 2. Обнаружить устройства, которые НЕ рандомизируют свой MAC адрес
+
+```{r}
+non_random_indicators <- c("A", "a", "E", "e", "2", "6")
+
+devices_without_randomization <- valid_stations[
+    !substr(valid_stations$station_mac, 2, 2) %in% non_random_indicators, ]
+devices_without_randomization
+```
+
+#### 3. Кластеризовать запросы от устройств к точкам доступа по их именам. Определить время появления устройства в зоне радиовидимости и время выхода его из нее.
+
+```{r}
+client_data_prepared <- valid_stations
+client_data_prepared$first_time_seen <- as.POSIXct(client_data_prepared$first_time_seen)
+client_data_prepared$last_time_seen <- as.POSIXct(client_data_prepared$last_time_seen)
+client_data_prepared$probed_essids <- ifelse(
+    is.na(client_data_prepared$probed_essids) | client_data_prepared$probed_essids == "", 
+    "Unknown", 
+    as.character(client_data_prepared$probed_essids)
+)
+client_data_prepared <- client_data_prepared[client_data_prepared$probed_essids != "Unknown", ]
+
+split_essids <- str_split(client_data_prepared$probed_essids, ",")
+client_data_expanded <- client_data_prepared[rep(seq_len(nrow(client_data_prepared)), lengths(split_essids)), ]
+client_data_expanded$cluster <- trimws(unlist(split_essids))
+client_data_expanded <- client_data_expanded[client_data_expanded$cluster != "" & client_data_expanded$cluster != "Unknown", ]
+
+cluster_summary <- aggregate(
+    cbind(
+        first_appearance = first_time_seen,
+        last_appearance = last_time_seen,
+        power_values = power,
+        packet_counts = packets
+    ) ~ station_mac + cluster,
+    data = client_data_expanded,
+    FUN = function(x) {
+        if (is.POSIXct(x[1])) min(x, na.rm = TRUE) else if (is.POSIXct(x[2])) max(x, na.rm = TRUE) else x
+    }
+)
+
+names(cluster_summary)[names(cluster_summary) == "first_appearance"] <- "first_appearance"
+names(cluster_summary)[names(cluster_summary) == "last_appearance"] <- "last_appearance"
+names(cluster_summary)[names(cluster_summary) == "power_values"] <- "avg_power"
+names(cluster_summary)[names(cluster_summary) == "packet_counts"] <- "total_packets"
+
+cluster_summary$duration_minutes <- as.numeric(
+    difftime(cluster_summary$last_appearance, cluster_summary$first_appearance, units = "mins")
+)
+cluster_summary$packets_per_minute <- ifelse(
+    cluster_summary$duration_minutes > 0,
+    round(cluster_summary$total_packets / cluster_summary$duration_minutes, 2),
+    0
+)
+
+cluster_summary <- cluster_summary[order(cluster_summary$station_mac, cluster_summary$first_appearance), ]
+cluster_summary
+```
+
+#### 4. Оценить стабильность уровня сигнала внури кластера во времени. Выявить наиболее стабильный кластер. 
+
+```{r}
+stability_metrics <- aggregate(
+    power ~ cluster,
+    data = client_data_expanded,
+    FUN = function(x) {
+        c(
+            request_count = length(x),
+            unique_devices = length(unique(client_data_expanded$station_mac[client_data_expanded$cluster == unique(client_data_expanded$cluster[match(x, client_data_expanded$power)])])),
+            mean_signal = round(mean(x, na.rm = TRUE), 2),
+            median_signal = round(median(x, na.rm = TRUE), 2),
+            std_deviation = if (length(x) == 1) 0 else round(sd(x, na.rm = TRUE), 2),
+            min_signal = min(x, na.rm = TRUE),
+            max_signal = max(x, na.rm = TRUE)
+        )
+    }
+)
+
+stability_analysis <- data.frame(
+    cluster = stability_metrics$cluster,
+    n_requests = sapply(stability_metrics$power, function(x) x[1]),
+    unique_devices = sapply(stability_metrics$power, function(x) x[2]),
+    mean_power = sapply(stability_metrics$power, function(x) x[3]),
+    median_power = sapply(stability_metrics$power, function(x) x[4]),
+    sd_power = sapply(stability_metrics$power, function(x) x[5]),
+    min_power = sapply(stability_metrics$power, function(x) x[6]),
+    max_power = sapply(stability_metrics$power, function(x) x[7])
+)
+
+stability_analysis$range_power <- round(stability_analysis$max_power - stability_analysis$min_power, 2)
+stability_analysis$cv_power <- ifelse(
+    abs(stability_analysis$mean_power) > 0,
+    round((stability_analysis$sd_power / abs(stability_analysis$mean_power)) * 100, 2),
+    0
+)
+
+filtered_stability <- stability_analysis[stability_analysis$n_requests >= 5, ]
+
+filtered_stability <- filtered_stability[order(filtered_stability$sd_power), ]
+
+most_stable_network <- filtered_stability[1, ]
+most_stable_network
+```
+
+## Вывод
+
+В данной работе мы научились анализировать логи Wi-Fi с использованием языка R

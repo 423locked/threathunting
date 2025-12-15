@@ -1,0 +1,182 @@
+---
+title: "Практическая работа №6. Исследование вредоносной активности в домене Windows"
+author: "yaroslavprishedko@yandex.ru"
+format: 
+  md:
+    output-file: README.md
+---
+
+## Цель работы
+
+1. Закрепить навыки исследования данных журнала Windows Active Directory
+2. Изучить структуру журнала системы Windows Active Directory
+3. Зекрепить практические навыки использования языка программирования R для обработки данных
+4. Закрепить знания основных функций обработки данных экосистемы `tidyverse` языка R
+
+## Исходные данные
+
+1.  Программное обеспечение MacOS Version 15.7.1 (24G231)
+2.  RStudio Desktop
+3.  Интерпретатор языка R 4.5.2
+
+## Общая ситуация
+
+На протяжении долгого времени системные администраторы Доброй Организации замечали подозрительную активность в домене Windows, но конкретных доказательств компрометации сети найти не удавалось. К Вам в руки попал файл с выгрузкой данных из системы SIEM. Помогите выявить факты компрометации.
+
+## Задание
+
+Используя программный пакет `dplyr` языка программирования R провести анализ журналов и ответить на вопросы. 
+
+## Подготовка к выполнению задания 
+
+Произведем загрузку библиотек:
+
+```{r}
+library(dplyr)
+library(tidyverse)
+library(readr)
+library(httr)
+library(jsonlite)
+library(xml2)
+library(rvest)
+```
+
+## Шаги
+
+### Подготовка данных
+
+#### Импортируйте данные. Привести датасеты в вид "аккуратных данных", преобразовать типы столбцов в соответствии с типом данных. 
+
+```{r}
+data_directory <- "data"
+if (!dir.exists(data_directory)) {
+  dir.create(data_directory)
+}
+
+archive_url <- "https://storage.yandexcloud.net/iamcth-data/dataset.tar.gz"
+local_filename <- file.path(data_directory, "dataset.tar.gz")
+
+download.file(
+  url = archive_url,
+  destfile = local_filename,
+  mode = "wb",
+  quiet = FALSE
+)
+
+untar(
+  tarfile = local_filename,
+  exdir = data_directory
+)
+
+json_file_path <- file.path(data_directory, "caldera_attack_evals_round1_day1_2019-10-20201108.json")
+
+file_connection <- file(json_file_path, open = "r")
+winlogs <- stream_in(file_connection)
+close(file_connection)
+
+microsoft_docs_url <- "https://learn.microsoft.com/en-us/windows-server/identity/ad-ds/plan/appendix-l--events-to-monitor"
+web_page <- read_html(microsoft_docs_url)
+event_df <- html_table(web_page)[[1]]
+
+```
+
+#### Просмотрите общую структуру данных с помощью функции `glimpse()`
+
+```{r}
+# Examine the structure of both datasets
+glimpse(winlogs)
+glimpse(event_df)
+```
+
+### Анализ
+
+#### 1. Раскройте датафрейм избавившись от вложенных датафреймов. Для обнаружения таких можно использовать функцию `dplyr::glimpse()`, а для раскрытия вложенности – `tidyr::unnest()`. Обратите внимание, что при раскрытии теряются внешние названия колонок – это можно предотвратить если использовать параметр `tidyr::unnest(..., names_sep = )`
+
+```{r}
+winlogs_flattened <- winlogs
+
+for(iteration in 0:2) {
+    nested_columns <- names(winlogs_flattened)[map_lgl(winlogs_flattened, is.data.frame)]
+
+    for (column_name in nested_columns) {
+        winlogs_flattened <- winlogs_flattened %>%
+            unnest(all_of(column_name), names_sep = "_")
+    }
+}
+
+glimpse(winlogs_flattened)
+```
+
+#### 2. Минимизируйте количество колонок в датафрейме – уберите колоки с единственным значением параметра.
+
+```{r}
+winlogs_reduced <- winlogs_flattened %>%
+    select(
+        where(
+            ~ n_distinct(.) > 1
+            )
+        )
+
+ncol(winlogs_flattened)
+ncol(winlogs_reduced)
+```
+
+#### 3. Какое количество хостов представлено в данном датасете?
+
+```{r}
+winlogs_flattened %>%
+    distinct(winlog_computer_name) %>%
+    count()
+```
+
+#### 4. Подготовьте датафрейм с расшифровкой Windows Event_ID, приведите типы данных к типу их значений
+
+```{r}
+processed_event_df <- event_df %>%
+    rename(
+        current_event_id = `Current Windows Event ID`,
+        legacy_event_id = `Legacy Windows Event ID`,
+        criticality = `Potential Criticality`,
+        summary = `Event Summary`
+    ) %>%
+    mutate(
+        current_event_id = as.integer(current_event_id),
+        legacy_event_id = as.integer(legacy_event_id)
+    )
+
+glimpse(processed_event_df)
+```
+
+#### 5. Есть ли в логе события с высоким и средним уровнем значимости? Сколько их?
+
+```{r}
+logs_criticality <- winlogs_flattened %>%
+    left_join(
+        processed_event_df,
+        by = c("event_code" = "current_event_id")
+    )
+
+logs_criticality %>% select(event_code, criticality) %>% head(10)
+
+high_criticality_count <- logs_criticality %>%
+    filter(criticality == "High") %>%
+    summarise(
+        count_high = n(),
+    )
+
+high_criticality_count
+
+medium_criticality_count <- logs_criticality %>%
+    filter(criticality == "Medium") %>%
+    summarise(
+        count_medium = n(),
+    )
+
+medium_criticality_count
+```
+
+Событий с критичностью `High` или `Medium` нет.
+
+## Вывод
+
+В данной работе мы научились анализировать логи Windows Active Directory
